@@ -41,5 +41,7 @@ class ServiceProvider extends BaseServiceProvider
                 $this->app['log']
             );
         });
+
+        $this->mergeConfigFrom(__DIR__ . '/../config/extasset.php', 'extasset');
     }
 }
