@@ -22,7 +22,7 @@ class ServiceProvider extends BaseServiceProvider
         });
 
         $this->publishes([
-            __DIR__ . '/config/extasset.php' => config_path('extasset.php'),
+            __DIR__ . '/../config/extasset.php' => config_path('extasset.php'),
         ]);
     }
 
