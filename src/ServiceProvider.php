@@ -20,6 +20,10 @@ class ServiceProvider extends BaseServiceProvider
         $this->app[Kernel::class]->command('extasset:update', function () use ($app) {
             $app[Extasset::class]->update(new Client);
         });
+
+        $this->publishes([
+            __DIR__ . '/config/extasset.php' => config_path('extasset.php'),
+        ]);
     }
 
     /**
