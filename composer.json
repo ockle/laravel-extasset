@@ -1,6 +1,6 @@
 {
     "name": "ockle/laravel-extasset",
-    "description": "Cache external assets",
+    "description": "Locally cache external assets",
     "license": "MIT",
     "minimum-stability": "stable",
     "require": {
