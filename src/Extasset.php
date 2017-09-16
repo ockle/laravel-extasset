@@ -81,21 +81,22 @@ class Extasset
      * Check and update all assets from sources
      *
      * @param Client $client
+     * @param bool $force
      */
-    public function update(Client $client)
+    public function update(Client $client, $force = false)
     {
         $now = Carbon::now();
 
         // We'll do the fetching of the assets synchronously,
         // so create a generator
-        $requests = function () use ($client, $now) {
+        $requests = function () use ($client, $now, $force) {
             foreach ($this->config->get('extasset.assets') as $assetName => $assetData) {
                 $cacheKey = $this->getCacheKey($assetName);
 
                 // If the user has defined a check_interval for the asset and we are
                 // running a check before the last cached data has expired,
                 // then don't bother fetching it again
-                if (isset($assetData['check_interval']) && $this->cache->has($cacheKey) && ($this->cache->get($cacheKey)['timestamp'] + ($assetData['check_interval'] * 60) > $now->timestamp)) {
+                if (!$force && isset($assetData['check_interval']) && $this->cache->has($cacheKey) && ($this->cache->get($cacheKey)['timestamp'] + ($assetData['check_interval'] * 60) > $now->timestamp)) {
                     continue;
                 }
 
@@ -107,7 +108,7 @@ class Extasset
 
         $pool = new Pool($client, $requests(), [
             'concurrency' => $this->config->get('extasset.concurrency', 5),
-            'fulfilled' => function (ResponseInterface $response, $assetName) use ($now) {
+            'fulfilled' => function (ResponseInterface $response, $assetName) use ($now, $force) {
                 // Get the contents and calculate the hash, which is what
                 // we'll use as the cache-busting identifier
                 $contents = $response->getBody()->getContents();
@@ -121,17 +122,17 @@ class Extasset
 
                     // If we have and the file contents have not changed,
                     // then update the timestamp and we're done
-                    if ($hash === $oldHash) {
+                    if (!$force && ($hash === $oldHash)) {
                         $this->cache->forever($cacheKey, [
                             'hash' => $hash,
                             'timestamp' => $now->timestamp,
                         ]);
 
                         return;
+                    } elseif ($hash !== $oldHash) {
+                        // If the contents have changed, mark the old one to be removed
+                        $fileToRemove = $this->getFileName($assetName, $oldHash);
                     }
-
-                    // If the contents have changed, mark the old one ot be removed
-                    $fileToRemove = $this->getFileName($assetName, $oldHash);
                 }
 
                 $this->disk->put($this->getFileName($assetName, $hash), $contents);
