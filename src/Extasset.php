@@ -65,9 +65,7 @@ class Extasset
         // e.g. if it hasn't been handled by an update,
         // then fall back to serving the external URL
         if (!$this->cache->has($cacheKey)) {
-            $assetsConfig = $this->config->get('extasset.assets');
-
-            return array_key_exists($assetName, $assetsConfig) ? $assetsConfig['source'] : '';
+            return $this->has($assetName) ? $this->config->get('extasset.assets')[$assetName]['source'] : '';
         }
 
         $hash = $this->cache->get($cacheKey)['hash'];
@@ -75,6 +73,17 @@ class Extasset
         // Otherwise return the URL to the asset,
         // ready for dropping into a src or href
         return $this->disk->url($this->getFileName($assetName, $hash));
+    }
+
+    /**
+     * Does Extasset know about this asset?
+     *
+     * @param string $assetName
+     * @return bool
+     */
+    public function has($assetName)
+    {
+        return array_key_exists($assetName, $this->config->get('extasset.assets'));
     }
 
     /**
